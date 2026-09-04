@@ -1,0 +1,1069 @@
+<!doctype html>
+<title>BU1 Sales Performance</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#F4F6F8;
+    --surface:#FFFFFF;
+    --surface-2:#ECEFF3;
+    --text:#16202B;
+    --text-muted:#62707E;
+    --border:#DEE3E8;
+    --accent:#1C7A8C;
+    --accent-strong:#125A69;
+    --accent-soft:#DFF0F3;
+    --good:#2E9E5B;
+    --good-soft:#E4F5EB;
+    --warn:#B9781A;
+    --warn-soft:#FBF0DD;
+    --bad:#C93E3E;
+    --bad-soft:#FBE7E7;
+    --shadow: 0 1px 2px rgba(22,32,43,.06), 0 8px 24px -12px rgba(22,32,43,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F1720;
+      --surface:#182531;
+      --surface-2:#1F2E3B;
+      --text:#EAF1F4;
+      --text-muted:#93A6B0;
+      --border:#29394A;
+      --accent:#4FC3D9;
+      --accent-strong:#7ADBEC;
+      --accent-soft:#193640;
+      --good:#4CC98A;
+      --good-soft:#173428;
+      --warn:#E0A83D;
+      --warn-soft:#3A2C10;
+      --bad:#F0685F;
+      --bad-soft:#3A1918;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0F1720;
+    --surface:#182531;
+    --surface-2:#1F2E3B;
+    --text:#EAF1F4;
+    --text-muted:#93A6B0;
+    --border:#29394A;
+    --accent:#4FC3D9;
+    --accent-strong:#7ADBEC;
+    --accent-soft:#193640;
+    --good:#4CC98A;
+    --good-soft:#173428;
+    --warn:#E0A83D;
+    --warn-soft:#3A2C10;
+    --bad:#F0685F;
+    --bad-soft:#3A1918;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Noto Sans Thai','Segoe UI',sans-serif;
+    font-size:14px;
+    line-height:1.5;
+  }
+  .wrap{
+    max-width:1220px;
+    margin:0 auto;
+    padding:28px 24px 60px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  h1,h2,.num,.big-num{
+    font-family:'Chakra Petch','Noto Sans Thai',sans-serif;
+  }
+  .num,.big-num,.stack-line,td.num-cell{
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* header */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .title-block h1{
+    margin:0 0 4px;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:.2px;
+    text-wrap:balance;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--text-muted);
+    font-size:13.5px;
+  }
+  .live-panel{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .status-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 12px;
+    border-radius:999px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    font-size:12.5px;
+    color:var(--text-muted);
+    box-shadow:var(--shadow);
+  }
+  .status-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--text-muted);
+    flex:none;
+  }
+  .status-chip[data-state="ok"] .status-dot{ background:var(--good); box-shadow:0 0 0 3px var(--good-soft);}
+  .status-chip[data-state="error"] .status-dot{ background:var(--bad); box-shadow:0 0 0 3px var(--bad-soft);}
+  .status-chip[data-state="loading"] .status-dot{ background:var(--warn); animation:pulse 1.1s ease-in-out infinite;}
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  @media (prefers-reduced-motion: reduce){ .status-chip[data-state="loading"] .status-dot{ animation:none; } }
+
+  .update-time{
+    font-size:12px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+
+  button.refresh{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--accent-strong);
+    background:var(--accent-soft);
+    border:1px solid transparent;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  button.refresh:hover{ filter:brightness(1.04); }
+  button.refresh:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  button.refresh:disabled{ opacity:.55; cursor:default; }
+
+  /* banner */
+  .banner{
+    display:none;
+    padding:12px 16px;
+    border-radius:10px;
+    font-size:13px;
+    border:1px solid transparent;
+  }
+  .banner.show{ display:block; }
+  .banner.warn{ background:var(--warn-soft); color:var(--warn); border-color:color-mix(in srgb, var(--warn) 35%, transparent); }
+  .banner.bad{ background:var(--bad-soft); color:var(--bad); border-color:color-mix(in srgb, var(--bad) 35%, transparent); }
+
+  /* filter bar */
+  .filter-bar{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:14px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .filter-row{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .filter-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--text-muted);
+    font-weight:700;
+    padding-top:7px;
+    flex:none;
+  }
+  .segmented{
+    display:inline-flex;
+    background:var(--surface-2);
+    padding:3px;
+    border-radius:999px;
+    gap:2px;
+  }
+  .seg-btn{
+    border:none;
+    background:transparent;
+    padding:6px 16px;
+    border-radius:999px;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-muted);
+    cursor:pointer;
+  }
+  .seg-btn.active{ background:var(--accent); color:#fff; }
+  .seg-btn:hover:not(.active){ color:var(--text); }
+  .seg-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .dropdown{ position:relative; }
+  .dropdown-trigger{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    min-width:240px;
+    justify-content:space-between;
+    padding:8px 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .dropdown-trigger:hover{ border-color:var(--accent); }
+  .dropdown-trigger:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .dropdown-trigger .chev{ width:14px; height:14px; flex:none; color:var(--text-muted); transition:transform .15s ease; }
+  .dropdown[data-open="true"] .dropdown-trigger{ border-color:var(--accent); }
+  .dropdown[data-open="true"] .dropdown-trigger .chev{ transform:rotate(180deg); }
+  .dropdown-panel{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;
+    min-width:280px;
+    max-width:340px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:8px;
+    z-index:20;
+  }
+  .dropdown-panel[hidden]{ display:none; }
+  .dropdown-actions{
+    display:flex;
+    justify-content:space-between;
+    padding:4px 8px 8px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:6px;
+  }
+  .link-btn{
+    border:none;
+    background:none;
+    color:var(--accent-strong);
+    font-family:inherit;
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .link-btn:hover{ text-decoration:underline; }
+  .dropdown-list{
+    display:flex;
+    flex-direction:column;
+    max-height:260px;
+    overflow-y:auto;
+  }
+  .dropdown-item{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:7px 8px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .dropdown-item:hover{ background:var(--surface-2); }
+  .dropdown-item input[type="checkbox"]{
+    width:15px;
+    height:15px;
+    accent-color:var(--accent);
+    flex:none;
+  }
+
+  /* kpi grid */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .kpi{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .kpi.kpi-primary{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .kpi.kpi-primary .label{ color:var(--accent-strong); }
+  .kpi .label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-muted);
+    font-weight:600;
+  }
+  .kpi .big-num{
+    font-size:26px;
+    font-weight:700;
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+  }
+  .kpi .big-num small{
+    font-family:'Noto Sans Thai',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    color:var(--text-muted);
+  }
+  .kpi .sub{
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .kpi .pct-chip{
+    align-self:flex-start;
+    margin-top:2px;
+    font-size:12px;
+    font-weight:700;
+    padding:2px 9px;
+    border-radius:999px;
+  }
+  .pct-chip.good{ background:var(--good-soft); color:var(--good); }
+  .pct-chip.warn{ background:var(--warn-soft); color:var(--warn); }
+  .pct-chip.bad{ background:var(--bad-soft); color:var(--bad); }
+
+  /* section panels */
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .panel[hidden]{ display:none; }
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+  }
+  .panel-head h2{
+    margin:0;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+  .panel-head .tally{
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .scroller{ overflow-x:auto; }
+  .proj-table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:920px;
+  }
+  .proj-table th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-muted);
+    font-weight:600;
+    padding:10px 16px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  .proj-table th.net-th{ color:var(--accent-strong); }
+  .proj-table td{
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    vertical-align:middle;
+  }
+  .proj-table tr:last-child td{ border-bottom:none; }
+  .proj-table tr.subtotal td{
+    background:var(--surface-2);
+    font-weight:700;
+    border-bottom:none;
+  }
+  td.proj-name{
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .compact-cell{ min-width:104px; }
+  .stack-line.strong{ font-size:13px; font-weight:700; }
+  .stack-line.muted{ font-size:11.5px; color:var(--text-muted); margin-top:1px; }
+  .unit-lbl{ font-weight:500; font-size:11px; color:var(--text-muted); }
+  .cancel-text{ color:var(--bad); }
+  .metric-cell{ min-width:170px; }
+  .metric-top{
+    display:flex;
+    justify-content:space-between;
+    font-size:12.5px;
+    margin-bottom:5px;
+  }
+  .metric-top .actual{ font-weight:700; }
+  .metric-top .target{ color:var(--text-muted); }
+  .bar-track{
+    height:7px;
+    border-radius:99px;
+    background:var(--surface-2);
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:99px;
+    background:var(--accent);
+  }
+  .bar-fill.good{ background:var(--good); }
+  .bar-fill.warn{ background:var(--warn); }
+  .bar-fill.bad{ background:var(--bad); }
+  td.pct-cell{ text-align:right; width:60px; }
+  .empty-row td{
+    text-align:center;
+    color:var(--text-muted);
+    padding:26px 16px;
+    font-size:13px;
+  }
+
+  .grand-total{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr 1fr auto;
+    gap:18px;
+    align-items:center;
+    padding:18px 22px;
+    border-radius:14px;
+    background:var(--accent-strong);
+    color:#fff;
+    box-shadow:var(--shadow);
+  }
+  .grand-total .gt-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    opacity:.85;
+  }
+  .grand-total .gt-num{
+    font-family:'Chakra Petch',sans-serif;
+    font-size:22px;
+    font-weight:700;
+  }
+  .grand-total .gt-sub{ font-size:12px; opacity:.8; margin-top:2px; }
+  .grand-total .gt-pct{
+    font-family:'Chakra Petch',sans-serif;
+    font-size:28px;
+    font-weight:700;
+    text-align:right;
+  }
+
+  footer{
+    color:var(--text-muted);
+    font-size:12px;
+    text-align:center;
+    padding-top:4px;
+  }
+
+  .empty-state{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--text-muted);
+  }
+
+  @media (max-width:760px){
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+    .grand-total{ grid-template-columns:1fr; text-align:left; }
+    .grand-total .gt-pct{ text-align:left; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>BU1 Sales Performance</h1>
+      <p>ยอดขาย (จอง) หัก ยกเลิก = ยอดขาย Net เทียบเป้า Working Rolling · เฉพาะโครงการที่มีเป้าขาย</p>
+    </div>
+    <div class="live-panel">
+      <span class="update-time" id="updateTime">ยังไม่เคยอัปเดต</span>
+      <span class="status-chip" id="statusChip" data-state="loading">
+        <span class="status-dot"></span>
+        <span id="statusText">กำลังเชื่อมต่อ…</span>
+      </span>
+      <button class="refresh" id="refreshBtn" type="button">รีเฟรชตอนนี้</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="filter-bar">
+    <div class="filter-row">
+      <span class="filter-label">กลุ่ม</span>
+      <div class="segmented" id="groupSegmented">
+        <button type="button" class="seg-btn active" data-group="all">ทั้งหมด</button>
+        <button type="button" class="seg-btn" data-group="ready">พร้อมโอน</button>
+        <button type="button" class="seg-btn" data-group="presale">พรีเซล</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">โครงการ</span>
+      <div class="dropdown" id="projectDropdown" data-open="false">
+        <button type="button" class="dropdown-trigger" id="projectDropdownBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span id="projectDropdownLabel">ทั้งหมด</span>
+          <svg class="chev" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="dropdown-panel" id="projectDropdownPanel" hidden>
+          <div class="dropdown-actions">
+            <button type="button" class="link-btn" id="selectAllBtn">เลือกทั้งหมด</button>
+            <button type="button" class="link-btn" id="clearAllBtn">ล้างทั้งหมด</button>
+          </div>
+          <div class="dropdown-list" id="projectDropdownList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kpi-grid" id="kpiGrid"></section>
+
+  <section class="panel" id="panelReady">
+    <div class="panel-head">
+      <h2>พร้อมโอน · Ready to move in</h2>
+      <span class="tally" id="readyTally"></span>
+    </div>
+    <div class="scroller">
+      <table class="proj-table">
+        <thead>
+          <tr>
+            <th>โครงการ</th>
+            <th>ยอดขาย (จอง)</th>
+            <th>ยกเลิก</th>
+            <th class="metric-cell net-th">ยอดขาย Net · หน่วย</th>
+            <th class="metric-cell net-th">ยอดขาย Net · มูลค่า</th>
+            <th class="pct-cell">%</th>
+          </tr>
+        </thead>
+        <tbody id="readyBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="panelPresale">
+    <div class="panel-head">
+      <h2>พรีเซล · Presale</h2>
+      <span class="tally" id="presaleTally"></span>
+    </div>
+    <div class="scroller">
+      <table class="proj-table">
+        <thead>
+          <tr>
+            <th>โครงการ</th>
+            <th>ยอดขาย (จอง)</th>
+            <th>ยกเลิก</th>
+            <th class="metric-cell net-th">ยอดขาย Net · หน่วย</th>
+            <th class="metric-cell net-th">ยอดขาย Net · มูลค่า</th>
+            <th class="pct-cell">%</th>
+          </tr>
+        </thead>
+        <tbody id="presaleBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grand-total" id="grandTotal">
+    <div>
+      <div class="gt-label">Net Sales — ยูนิต</div>
+      <div class="gt-num" id="gtUnit">–</div>
+    </div>
+    <div>
+      <div class="gt-label">Net Sales — มูลค่า</div>
+      <div class="gt-num" id="gtValue">–</div>
+      <div class="gt-sub" id="gtValueSub"></div>
+    </div>
+    <div>
+      <div class="gt-label">ยกเลิกรวม (ในขอบเขตที่เลือก)</div>
+      <div class="gt-num" id="gtCancel">–</div>
+    </div>
+    <div class="gt-pct" id="gtPct">–</div>
+  </section>
+
+  <footer id="footer">โหลดข้อมูล…</footer>
+</div>
+
+<script>
+  const WORKBOOK_URI = "file:///b!JQ9Xt6MoRkWpw0rTVA3_oKijOziy1LtAtTcx9dwLPrIj_whZleR3TLBsoBelM-iH/BF016213-36A2-455E-974F-4A6A5711A079";
+  const SERVER = "Microsoft 365";
+  const TOOL = "read_resource";
+  const REFRESH_MS = 5 * 60 * 1000;
+
+  const ALIASES = { "Atmoz Kanaal Rangsit": "Atmoz Kanaal" };
+  const canonical = (name) => ALIASES[(name || "").trim()] || (name || "").trim();
+
+  const TARGETS = [
+    { group: "ready",   project: "Modiz S50",                       unit: 15, value: 79723456.67 },
+    { group: "ready",   project: "Atmoz Bangna",                    unit: 20, value: 43096507.41 },
+    { group: "ready",   project: "Atmoz Kanaal",                    unit: 30, value: 61088658.93 },
+    { group: "ready",   project: "Atmoz Season Ladkrabang",         unit: 40, value: 71963298.57 },
+    { group: "ready",   project: "Kave Wonderland",                 unit: 40, value: 79041497.33 },
+    { group: "ready",   project: "MAROON RATCHADA",                 unit: 20, value: 52229275.10 },
+    { group: "ready",   project: "Modiz Avantgarde",                unit: 24, value: 66093714.29 },
+    { group: "ready",   project: "Kave Embryo Rangsit",             unit: 30, value: 48410877.83 },
+    { group: "presale", project: "Kavalon",                         unit: 60, value: 130323259.76 },
+    { group: "presale", project: "Atmoz De Sol Thipphawan Station", unit: 40, value: 99944723.62 },
+    { group: "presale", project: "Kave Carnival Rangsit",           unit: 40, value: 68497869.46 },
+    { group: "presale", project: "Modiz Bangna",                    unit: 0,  value: 0 },
+  ];
+  const ALL_PROJECT_NAMES = TARGETS.map((t) => t.project);
+
+  const fmtInt = (n) => new Intl.NumberFormat("th-TH").format(Math.round(n || 0));
+  const fmtMoney = (n) => new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(Math.round(n || 0));
+  const fmtCompactMoney = (n) => {
+    const v = n || 0;
+    const sign = v < 0 ? "-" : "";
+    const abs = Math.abs(v);
+    if (abs >= 1e6) return `${sign}฿${(abs / 1e6).toFixed(1)}M`;
+    if (abs >= 1e3) return `${sign}฿${(abs / 1e3).toFixed(0)}K`;
+    return `${sign}฿${fmtInt(abs)}`;
+  };
+  const fmtPct = (n) => (Number.isFinite(n) ? Math.round(n * 100) : 0) + "%";
+  const band = (pct) => (pct >= 1 ? "good" : pct >= 0.7 ? "warn" : "bad");
+
+  function parseNum(s) {
+    if (s == null) return 0;
+    s = String(s).trim();
+    if (!s || s === "-" || /^#+$/.test(s)) return 0;
+    const n = parseFloat(s.replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function parseWorkbook(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/);
+    const headerIdx = lines.findIndex((l) => l.startsWith("No\t"));
+    if (headerIdx === -1) return [];
+    const rows = [];
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line || !line.trim()) continue;
+      if (/^##\s/.test(line) || line.startsWith("Formulas")) break;
+      const c = line.split("\t");
+      if (c.length < 14) continue;
+      rows.push({
+        bu: (c[1] || "").trim(),
+        project: (c[2] || "").trim(),
+        netPrice: parseNum(c[8]),
+        status: (c[13] || "").trim(),
+      });
+    }
+    return rows;
+  }
+
+  function buildStats(rows, targets) {
+    const map = {};
+    targets.forEach((t) => (map[t.project] = { ...t, grossUnit: 0, grossValue: 0, cancelUnit: 0, cancelValue: 0 }));
+    rows.forEach((r) => {
+      if (r.bu !== "BU1") return;
+      const key = canonical(r.project);
+      const m = map[key];
+      if (!m) return;
+      if (r.status === "B") {
+        m.grossUnit += 1;
+        m.grossValue += r.netPrice;
+      } else if (r.status === "Cancel") {
+        m.cancelUnit += 1;
+        m.cancelValue += r.netPrice;
+      }
+    });
+    return targets.map((t) => {
+      const m = map[t.project];
+      return { ...m, netUnit: m.grossUnit - m.cancelUnit, netValue: m.grossValue - m.cancelValue };
+    });
+  }
+
+  function barRow(stat) {
+    const unitPct = stat.unit > 0 ? stat.netUnit / stat.unit : stat.netUnit > 0 ? 1 : 0;
+    const valPct = stat.value > 0 ? stat.netValue / stat.value : stat.netValue > 0 ? 1 : 0;
+    const chipBand = band(Math.min(unitPct, valPct) || 0);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="proj-name">${stat.project}</td>
+      <td class="compact-cell">
+        <div class="stack-line strong">${fmtInt(stat.grossUnit)} <span class="unit-lbl">ยูนิต</span></div>
+        <div class="stack-line muted" title="${fmtMoney(stat.grossValue)} บาท">${fmtCompactMoney(stat.grossValue)}</div>
+      </td>
+      <td class="compact-cell">
+        <div class="stack-line strong cancel-text">${stat.cancelUnit ? "-" + fmtInt(stat.cancelUnit) : "0"} <span class="unit-lbl">ยูนิต</span></div>
+        <div class="stack-line muted cancel-text" title="${fmtMoney(stat.cancelValue)} บาท">${stat.cancelValue ? "-" + fmtCompactMoney(stat.cancelValue) : "–"}</div>
+      </td>
+      <td class="metric-cell">
+        <div class="metric-top"><span class="actual">${fmtInt(stat.netUnit)}</span><span class="target">/ ${fmtInt(stat.unit)}</span></div>
+        <div class="bar-track"><div class="bar-fill ${band(unitPct)}" style="width:${Math.min(100, Math.max(0, unitPct * 100))}%"></div></div>
+      </td>
+      <td class="metric-cell">
+        <div class="metric-top"><span class="actual" title="${fmtMoney(stat.netValue)} บาท">${fmtCompactMoney(stat.netValue)}</span><span class="target" title="${fmtMoney(stat.value)} บาท">/ ${fmtCompactMoney(stat.value)}</span></div>
+        <div class="bar-track"><div class="bar-fill ${band(valPct)}" style="width:${Math.min(100, Math.max(0, valPct * 100))}%"></div></div>
+      </td>
+      <td class="pct-cell"><span class="pct-chip ${chipBand}">${fmtPct(unitPct)}</span></td>
+    `;
+    return tr;
+  }
+
+  function sumStats(stats) {
+    return stats.reduce(
+      (a, s) => ({
+        unit: a.unit + s.unit,
+        value: a.value + s.value,
+        grossUnit: a.grossUnit + s.grossUnit,
+        grossValue: a.grossValue + s.grossValue,
+        cancelUnit: a.cancelUnit + s.cancelUnit,
+        cancelValue: a.cancelValue + s.cancelValue,
+        netUnit: a.netUnit + s.netUnit,
+        netValue: a.netValue + s.netValue,
+      }),
+      { unit: 0, value: 0, grossUnit: 0, grossValue: 0, cancelUnit: 0, cancelValue: 0, netUnit: 0, netValue: 0 }
+    );
+  }
+
+  function subtotalRow(label, stats) {
+    const t = sumStats(stats);
+    const unitPct = t.unit > 0 ? t.netUnit / t.unit : 0;
+    const valPct = t.value > 0 ? t.netValue / t.value : 0;
+    const tr = document.createElement("tr");
+    tr.className = "subtotal";
+    tr.innerHTML = `
+      <td class="proj-name">${label}</td>
+      <td class="compact-cell">
+        <div class="stack-line strong">${fmtInt(t.grossUnit)} <span class="unit-lbl">ยูนิต</span></div>
+        <div class="stack-line muted" title="${fmtMoney(t.grossValue)} บาท">${fmtCompactMoney(t.grossValue)}</div>
+      </td>
+      <td class="compact-cell">
+        <div class="stack-line strong cancel-text">${t.cancelUnit ? "-" + fmtInt(t.cancelUnit) : "0"} <span class="unit-lbl">ยูนิต</span></div>
+        <div class="stack-line muted cancel-text" title="${fmtMoney(t.cancelValue)} บาท">${t.cancelValue ? "-" + fmtCompactMoney(t.cancelValue) : "–"}</div>
+      </td>
+      <td class="metric-cell">
+        <div class="metric-top"><span class="actual">${fmtInt(t.netUnit)}</span><span class="target">/ ${fmtInt(t.unit)}</span></div>
+        <div class="bar-track"><div class="bar-fill ${band(unitPct)}" style="width:${Math.min(100, Math.max(0, unitPct * 100))}%"></div></div>
+      </td>
+      <td class="metric-cell">
+        <div class="metric-top"><span class="actual" title="${fmtMoney(t.netValue)} บาท">${fmtCompactMoney(t.netValue)}</span><span class="target" title="${fmtMoney(t.value)} บาท">/ ${fmtCompactMoney(t.value)}</span></div>
+        <div class="bar-track"><div class="bar-fill ${band(valPct)}" style="width:${Math.min(100, Math.max(0, valPct * 100))}%"></div></div>
+      </td>
+      <td class="pct-cell"><span class="pct-chip ${band(unitPct)}">${fmtPct(unitPct)}</span></td>
+    `;
+    return { tr, totals: t };
+  }
+
+  function emptyRow(colspan, text) {
+    const tr = document.createElement("tr");
+    tr.className = "empty-row";
+    tr.innerHTML = `<td colspan="${colspan}">${text}</td>`;
+    return tr;
+  }
+
+  // ---- filter state ----
+  let latestRows = [];
+  let hasData = false;
+  let groupFilter = "all";
+  let selectedProjects = new Set(ALL_PROJECT_NAMES);
+
+  function projectsForGroup(g) {
+    return TARGETS.filter((t) => g === "all" || t.group === g).map((t) => t.project);
+  }
+
+  const projectDropdown = document.getElementById("projectDropdown");
+  const projectDropdownBtn = document.getElementById("projectDropdownBtn");
+  const projectDropdownPanel = document.getElementById("projectDropdownPanel");
+
+  function setDropdownOpen(open) {
+    projectDropdown.dataset.open = open ? "true" : "false";
+    projectDropdownPanel.hidden = !open;
+    projectDropdownBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function updateProjectDropdownLabel() {
+    const list = projectsForGroup(groupFilter);
+    const label = document.getElementById("projectDropdownLabel");
+    const n = selectedProjects.size;
+    if (n === 0) label.textContent = "ยังไม่ได้เลือกโครงการ";
+    else if (n === list.length) label.textContent = `ทั้งหมด (${n})`;
+    else if (n <= 2) label.textContent = Array.from(selectedProjects).join(", ");
+    else label.textContent = `${n} จาก ${list.length} โครงการ`;
+  }
+
+  function renderProjectDropdown() {
+    const list = projectsForGroup(groupFilter);
+    const listEl = document.getElementById("projectDropdownList");
+    listEl.innerHTML = list
+      .map(
+        (p) => `
+        <label class="dropdown-item">
+          <input type="checkbox" data-project="${p}" ${selectedProjects.has(p) ? "checked" : ""}>
+          <span>${p}</span>
+        </label>`
+      )
+      .join("");
+    listEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const p = cb.dataset.project;
+        if (cb.checked) selectedProjects.add(p);
+        else selectedProjects.delete(p);
+        updateProjectDropdownLabel();
+        renderAll();
+      });
+    });
+    updateProjectDropdownLabel();
+  }
+
+  projectDropdownBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setDropdownOpen(projectDropdown.dataset.open !== "true");
+  });
+  document.addEventListener("click", (e) => {
+    if (!projectDropdown.contains(e.target)) setDropdownOpen(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setDropdownOpen(false);
+  });
+  document.getElementById("selectAllBtn").addEventListener("click", () => {
+    selectedProjects = new Set(projectsForGroup(groupFilter));
+    renderProjectDropdown();
+    renderAll();
+  });
+  document.getElementById("clearAllBtn").addEventListener("click", () => {
+    selectedProjects = new Set();
+    renderProjectDropdown();
+    renderAll();
+  });
+
+  document.getElementById("groupSegmented").addEventListener("click", (e) => {
+    const btn = e.target.closest(".seg-btn");
+    if (!btn) return;
+    groupFilter = btn.dataset.group;
+    document.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    selectedProjects = new Set(projectsForGroup(groupFilter));
+    renderProjectDropdown();
+    renderAll();
+  });
+
+  function renderAll() {
+    const filteredTargets = TARGETS.filter((t) => (groupFilter === "all" || t.group === groupFilter) && selectedProjects.has(t.project));
+    const stats = buildStats(latestRows, filteredTargets);
+    render(stats);
+  }
+
+  function render(stats) {
+    const readyStats = stats.filter((s) => s.group === "ready");
+    const presaleStats = stats.filter((s) => s.group === "presale");
+
+    const panelReady = document.getElementById("panelReady");
+    const panelPresale = document.getElementById("panelPresale");
+    panelReady.hidden = groupFilter === "presale";
+    panelPresale.hidden = groupFilter === "ready";
+
+    const readyBody = document.getElementById("readyBody");
+    const presaleBody = document.getElementById("presaleBody");
+    readyBody.innerHTML = "";
+    presaleBody.innerHTML = "";
+
+    let readyTotals = { unit: 0, value: 0, netUnit: 0, netValue: 0, cancelUnit: 0, cancelValue: 0 };
+    let presaleTotals = { unit: 0, value: 0, netUnit: 0, netValue: 0, cancelUnit: 0, cancelValue: 0 };
+
+    if (readyStats.length) {
+      readyStats.forEach((s) => readyBody.appendChild(barRow(s)));
+      const sub = subtotalRow("รวมพร้อมโอน", readyStats);
+      readyBody.appendChild(sub.tr);
+      readyTotals = sub.totals;
+    } else if (!panelReady.hidden) {
+      readyBody.appendChild(emptyRow(6, "ไม่มีโครงการที่เลือกในกลุ่มนี้"));
+    }
+
+    if (presaleStats.length) {
+      presaleStats.forEach((s) => presaleBody.appendChild(barRow(s)));
+      const sub = subtotalRow("รวมพรีเซล", presaleStats);
+      presaleBody.appendChild(sub.tr);
+      presaleTotals = sub.totals;
+    } else if (!panelPresale.hidden) {
+      presaleBody.appendChild(emptyRow(6, "ไม่มีโครงการที่เลือกในกลุ่มนี้"));
+    }
+
+    document.getElementById("readyTally").textContent = `${readyStats.length} โครงการ`;
+    document.getElementById("presaleTally").textContent = `${presaleStats.length} โครงการ`;
+
+    const totalUnit = readyTotals.unit + presaleTotals.unit;
+    const totalNetUnit = readyTotals.netUnit + presaleTotals.netUnit;
+    const totalValue = readyTotals.value + presaleTotals.value;
+    const totalNetValue = readyTotals.netValue + presaleTotals.netValue;
+    const totalGrossUnit = stats.reduce((a, s) => a + s.grossUnit, 0);
+    const totalGrossValue = stats.reduce((a, s) => a + s.grossValue, 0);
+    const totalCancelUnit = stats.reduce((a, s) => a + s.cancelUnit, 0);
+    const totalCancelValue = stats.reduce((a, s) => a + s.cancelValue, 0);
+    const unitPct = totalUnit > 0 ? totalNetUnit / totalUnit : 0;
+    const valPct = totalValue > 0 ? totalNetValue / totalValue : 0;
+
+    document.getElementById("gtUnit").textContent = `${fmtInt(totalNetUnit)} / ${fmtInt(totalUnit)} ยูนิต`;
+    document.getElementById("gtValue").textContent = `฿${fmtMoney(totalNetValue)}`;
+    document.getElementById("gtValueSub").textContent = `เป้า ฿${fmtMoney(totalValue)}`;
+    document.getElementById("gtCancel").textContent = `${fmtInt(totalCancelUnit)} ยูนิต · ฿${fmtMoney(totalCancelValue)}`;
+    document.getElementById("gtPct").textContent = fmtPct(unitPct);
+
+    const kpiGrid = document.getElementById("kpiGrid");
+    kpiGrid.innerHTML = `
+      <div class="kpi kpi-primary">
+        <div class="label">ยอดขาย Net เทียบเป้า</div>
+        <div class="big-num">${fmtInt(totalNetUnit)}<small>/ ${fmtInt(totalUnit)} ยูนิต</small></div>
+        <div class="sub">฿${fmtMoney(totalNetValue)} / เป้า ฿${fmtMoney(totalValue)}</div>
+        <span class="pct-chip ${band(unitPct)}">${fmtPct(unitPct)} ของเป้า (ยูนิต)</span>
+      </div>
+      <div class="kpi">
+        <div class="label">ยอดขาย (จอง)</div>
+        <div class="big-num">${fmtInt(totalGrossUnit)}<small>ยูนิต</small></div>
+        <div class="sub">฿${fmtMoney(totalGrossValue)}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">ยกเลิก</div>
+        <div class="big-num">${fmtInt(totalCancelUnit)}<small>ยูนิต</small></div>
+        <div class="sub">฿${fmtMoney(totalCancelValue)}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">ราคาเฉลี่ยต่อยูนิต (Net)</div>
+        <div class="big-num">฿${fmtMoney(totalNetUnit > 0 ? totalNetValue / totalNetUnit : 0)}</div>
+        <div class="sub">จากยอดขาย Net ${fmtInt(totalNetUnit)} ยูนิต</div>
+      </div>
+    `;
+  }
+
+  function setStatus(state, text) {
+    const chip = document.getElementById("statusChip");
+    chip.dataset.state = state;
+    document.getElementById("statusText").textContent = text;
+  }
+
+  function showBanner(kind, text) {
+    const b = document.getElementById("banner");
+    if (!text) {
+      b.className = "banner";
+      return;
+    }
+    b.className = `banner show ${kind}`;
+    b.textContent = text;
+  }
+
+  function extractText(result) {
+    if (result && typeof result.payload === "string") return result.payload;
+    const block = (result && result.content ? result.content : []).find((c) => c.type === "text");
+    return block ? block.text : "";
+  }
+
+  const refreshBtn = document.getElementById("refreshBtn");
+  const updateTimeEl = document.getElementById("updateTime");
+
+  function setUpdateTime(date) {
+    updateTimeEl.textContent = `อัปเดตล่าสุด ${date.toLocaleString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", day: "2-digit", month: "2-digit" })}`;
+  }
+
+  function handleError(error) {
+    const code = error && error.code;
+    if (!hasData) {
+      document.getElementById("kpiGrid").innerHTML = '<div class="empty-state" style="grid-column:1/-1">ยังไม่มีข้อมูล</div>';
+    }
+    if (code === "needs_reauth" || code === "server_not_connected" || code === "selection_required") {
+      setStatus("error", "ไม่ได้เชื่อมต่อ");
+      showBanner("bad", `เชื่อมต่อ "${SERVER}" ใน claude.ai → Settings → Connectors แล้วรีเฟรชอีกครั้ง`);
+    } else if (code === "blocked_by_policy" || code === "approval_required") {
+      setStatus("error", "ถูกบล็อกโดยนโยบาย");
+      showBanner("bad", "องค์กรบล็อกการเรียกข้อมูลนี้ ติดต่อผู้ดูแลระบบ");
+    } else if (code === "not_granted" || code === "capability_disabled" || code === "capability_removed") {
+      setStatus("error", "ใช้การเชื่อมต่อสดไม่ได้ในมุมมองนี้");
+      showBanner("warn", "หน้านี้ไม่รองรับการดึงข้อมูลสดในบริบทปัจจุบัน");
+    } else {
+      setStatus(hasData ? "ok" : "error", hasData ? "อัปเดตล่าสุด (จากแคช)" : "เชื่อมต่อไม่สำเร็จ");
+      showBanner("warn", `อัปเดตข้อมูลล้มเหลวชั่วคราว (${code || "unknown"}) — แสดงข้อมูลล่าสุดที่มี`);
+    }
+  }
+
+  async function init() {
+    renderProjectDropdown();
+
+    let settled = false;
+    setTimeout(() => {
+      if (!settled) {
+        showBanner(
+          "warn",
+          "การเชื่อมต่อใช้เวลานานกว่าปกติ — ลองมองหาข้อความขออนุญาตใช้งาน Microsoft 365 ที่อาจเด้งขึ้นมา (บางครั้งซ่อนอยู่ด้านบนสุดของหน้าเว็บ) แล้วกด Allow จากนั้นลองรีโหลดหน้านี้ใหม่ หรือเช็คว่าเข้าสู่ระบบด้วยบัญชีที่เชื่อมต่อ Microsoft 365 ไว้ (Settings → Connectors) หรือไม่"
+        );
+      }
+    }, 8000);
+
+    let mcp;
+    try {
+      mcp = await claude.use("mcp");
+    } catch (e) {
+      mcp = null;
+    }
+    settled = true;
+    if (!mcp) {
+      setStatus("error", "ไม่รองรับการเชื่อมต่อสด");
+      showBanner("bad", "มุมมองนี้ไม่รองรับการดึงข้อมูลสดจาก SharePoint");
+      document.getElementById("kpiGrid").innerHTML = '<div class="empty-state" style="grid-column:1/-1">ไม่สามารถโหลดข้อมูลสดได้</div>';
+      refreshBtn.disabled = true;
+      return;
+    }
+
+    mcp.watchTool(
+      SERVER,
+      TOOL,
+      { uri: WORKBOOK_URI },
+      (ev) => {
+        settled = true;
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "รีเฟรชตอนนี้";
+        if (ev.type === "data") {
+          const text = extractText(ev.result);
+          latestRows = parseWorkbook(text);
+          hasData = true;
+          renderAll();
+          showBanner();
+          setStatus("ok", ev.result && ev.result.cache && ev.result.cache.revalidating ? "กำลังอัปเดต…" : "สด");
+          const ts = ev.result && ev.result.cache ? new Date(ev.result.cache.storedAt) : new Date();
+          setUpdateTime(ts);
+          document.getElementById("footer").textContent =
+            "ข้อมูลจาก Book 1.xlsx (SharePoint) · เฉพาะสถานะ B (จอง) และ Cancel (ยกเลิก) · โครงการ BU1 ที่มีเป้าขาย";
+        } else {
+          handleError(ev.error);
+        }
+      },
+      { refetchInterval: REFRESH_MS }
+    );
+
+    refreshBtn.addEventListener("click", async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = "กำลังรีเฟรช…";
+      setStatus("loading", "กำลังรีเฟรช…");
+      try {
+        await mcp.invalidate(SERVER, TOOL, { uri: WORKBOOK_URI });
+      } catch (e) {
+        /* invalidate failure just means next poll still applies */
+      }
+      setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "รีเฟรชตอนนี้";
+      }, 2500);
+    });
+  }
+
+  init();
+</script>
